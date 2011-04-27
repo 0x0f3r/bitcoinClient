@@ -1,7 +1,7 @@
 <?php
 /*  
 		Copyright 2011, Fabian Heredia
-    Licensed under the Apache License, Version 2.0 (the "License");
+	Licensed under the Apache License, Version 2.0 (the "License");
 	you may not use this file except in compliance with the License.
 	You may obtain a copy of the License at
 	 
@@ -13,22 +13,27 @@
 	See the License for the specific language governing permissions and
 	limitations under the License.
 */
+
 require_once('jsonRPCClient.php');
 
 	// Enumeration of info and actions
+	// TODO: Add Documentation
 	const error 			= -1;
 	// Info
+	// - Misc
 	const numBlocks 		= 0;
 	const numNodes 			= 1;
 	const diff 				= 2;
 	const generating 		= 3;
 	const hashRate 			= 4;
-	// Actions
-	const getAddress		= 5;
-	const getAssociated		= 6;
-	const getBalance 		= 7;
+	// - Account
+	const address			= 5;
+	const associated		= 6;
+	const balance 			= 7;
 	const newAddress		= 8;
-	const internalTransfer 	= 9;
+	const listAccounts		= 9;
+	const validate			= 10;
+	// Actions
 
 class bitcoinClient
 {	
@@ -64,9 +69,9 @@ class bitcoinClient
 		}
 	}
 	
-	//Cobine in one function internal and external transactions
+	// TODO: Automatically choose between move, sendtoaddress and sendfrom
 	// Send the specify ammount of bitcoins to an address.
-	public function sendBitcoins($address, $ammount)
+	public function sendBitcoins($destination, $ammount)
 	{
 		return $this->client->sendtoaddress($address, $ammount);
 	}
@@ -74,8 +79,8 @@ class bitcoinClient
 	// This is misc info not required for normal operation. It should be self
 	// desciptive. You should also be able to use it in the following manner:
 	// - $myClient = new bitcoinClient("http://root:@localhost:8332");
-	// - echo myClient::getMiscInfo(numNodes);
-	public function getMiscInfo($type)
+	// - echo myClient->miscInfo(numNodes);
+	public function miscInfo($type)
 	{
 		switch($type)
 		{
@@ -90,29 +95,34 @@ class bitcoinClient
 			case hashRate:
 				return $this->client->gethashespersec();
 			default:
-				return error;
+				return $this->client->getinfo();
 		}
 	}
 	
-	public function accountActions($action, $account = null, $all = false)
+	// Arg1 is Address or Account
+	// Arg2 is if we display some or all info
+	public function accountInfo($action, $arg1 = null, $arg2 = false)
 	{
 		switch($action)
 		{
-			case getAddress:
-				if($account == null){
-					// We cannot miss the $accoutn argument
+			case address:
+				if($arg1 == null){
+					// We cannot miss the $arg1 argument
 					return error;
 				}
 				else{
-					return (!$all) ? $this->client->getaccountaddress($account) : $this->client->getaddressesbyaccount($account);
+					return (!$arg2) ? $this->client->getaccountaddress($arg1) : $this->client->getaddressesbyaccount($arg1);
 				}
-			case getAssociated:
-				// Should be $address instead of $account
-				return ($account == null) ? $this->client->getaccount() : $this->client->getaccount($account);
-			case getBalance:
-				return ($account == null) ? $this->client->getbalance() : $this->client->getbalance($account);
+			case associated:
+				return ($arg1 == null) ? $this->client->getaccount() : $this->client->getaccount($arg1);
+			case balance:
+				return ($arg1 == null) ? $this->client->getbalance() : $this->client->getbalance($arg1);
 			case newAddress:
-				return ($account == null) ? $this->client->getnewaddress() : $this->client->getnewaddress($account);
+				return ($arg1 == null) ? $this->client->getnewaddress() : $this->client->getnewaddress($arg1);
+			case listAccounts:
+				return $this->client->listaccounts();
+			case validate:
+				return ($arg1 == null) ? error : $this->client->validateaddress($arg1);
 			default:
 				return error;
 		}
