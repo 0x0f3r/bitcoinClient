@@ -71,9 +71,26 @@ class bitcoinClient
 	
 	// TODO: Automatically choose between move, sendtoaddress and sendfrom
 	// Send the specify ammount of bitcoins to an address.
-	public function sendBitcoins($destination, $ammount)
+	public function send($address, $ammount, $from = null)
 	{
-		return $this->client->sendtoaddress($address, $ammount);
+		// Simple send
+		if($from == null) return sendtoaddress($address, $ammount);
+		
+		// $from specified
+		$info = array($this->accountInfo(validate, $address), $this->accountInfo(validate, $from));
+		if(info[0]['isvalid'] && info[1]['isvalid'])
+		{
+			return (info[0]['ismine']) ? $this->client->move($this->accountInfo(associated, $from), $this->accountInfo(associated, $address), $ammount) : $this->client->sendfrom($from, $address, $ammount);
+		}
+		else if(info[0]['isvalid'])
+		{
+		// Still working on this
+			return (info[0]['ismine']) ? $this->client->move($from, $this->accountInfo(associated, $address), $ammount) : $this->client->sendfrom($this->accountInfo(address, $from), $address, $ammount);
+		}
+		else if(info[1]['isvalid'])
+		{
+			return (info[1]['ismine']) ? $this->client->move($this->accountInfo(associated, $from), $address, $ammount) : $this->client->sendfrom($this->accountInfo(address, $from), $address, $ammount);
+		}
 	}
 	
 	// This is misc info not required for normal operation. It should be self
@@ -114,7 +131,7 @@ class bitcoinClient
 					return (!$arg2) ? $this->client->getaccountaddress($arg1) : $this->client->getaddressesbyaccount($arg1);
 				}
 			case associated:
-				return ($arg1 == null) ? $this->client->getaccount() : $this->client->getaccount($arg1);
+				return ($arg1 == null) ? error : $this->client->getaccount($arg1);
 			case balance:
 				return ($arg1 == null) ? $this->client->getbalance() : $this->client->getbalance($arg1);
 			case newAddress:
@@ -126,6 +143,7 @@ class bitcoinClient
 			default:
 				return error;
 		}
+		// ~/.bitcoin/bitcoin.conf
 	}
 }
 ?>
